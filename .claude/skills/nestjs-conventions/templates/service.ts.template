@@ -1,0 +1,37 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../common/prisma/prisma.service';
+import { CreateFeatureDto } from './dto/create-feature.dto';
+import { UpdateFeatureDto } from './dto/update-feature.dto';
+
+@Injectable()
+export class FeatureService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  create(dto: CreateFeatureDto) {
+    return this.prisma.feature.create({ data: dto });
+  }
+
+  async findAll({ page, pageSize }: { page: number; pageSize: number }) {
+    const [data, total] = await Promise.all([
+      this.prisma.feature.findMany({ skip: (page - 1) * pageSize, take: pageSize }),
+      this.prisma.feature.count(),
+    ]);
+    return { data, meta: { page, pageSize, total } };
+  }
+
+  async findOne(id: string) {
+    const record = await this.prisma.feature.findUnique({ where: { id } });
+    if (!record) throw new NotFoundException(`Feature ${id} not found`);
+    return record;
+  }
+
+  async update(id: string, dto: UpdateFeatureDto) {
+    await this.findOne(id);
+    return this.prisma.feature.update({ where: { id }, data: dto });
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    return this.prisma.feature.delete({ where: { id } });
+  }
+}

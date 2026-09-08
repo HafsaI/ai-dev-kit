@@ -1,0 +1,62 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(turbo run *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(nest generate *)",
+      "Bash(prisma generate)",
+      "Bash(prisma migrate dev)",
+      "Bash(prisma migrate dev *)",
+      "Bash(prisma studio)",
+      "Bash(prisma db seed)"
+    ],
+    "ask": [
+      "Bash(prisma migrate deploy)",
+      "Bash(prisma migrate deploy *)",
+      "Bash(prisma migrate reset)",
+      "Bash(prisma migrate reset *)",
+      "Bash(prisma db push)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./apps/*/.env)",
+      "Read(./apps/*/.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(./apps/*/.env)",
+      "Edit(./apps/*/.env.*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=$(cat | jq -r \".tool_input.file_path // empty\"); case \"$f\" in *.ts|*.tsx) command -v prettier >/dev/null 2>&1 && prettier --write \"$f\" >/dev/null 2>&1 || npx --no-install prettier --write \"$f\" >/dev/null 2>&1 || true ;; esac'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'f=$(cat | jq -r \".tool_input.file_path // empty\"); case \"$f\" in *prisma/migrations/*.sql) if grep -qiE \"DROP TABLE|DROP COLUMN\" \"$f\" 2>/dev/null; then echo \"Migration guard: $f contains DROP TABLE/DROP COLUMN — confirm this is intentional and reversible before shipping.\" >&2; exit 2; fi ;; esac'"
+          }
+        ]
+      }
+    ]
+  }
+}
